@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gym Planner - Planificateur d'entraînement</title>
+    <script>
+      // Initialiser le thème au chargement de la page
+      (function() {
+        // Vérifier si React est déjà chargé (éviter les conflits)
+        if (window.React || document.getElementById('root').children.length > 0) {
+          console.log('React déjà chargé, laissons le ThemeProvider gérer le thème');
+          return;
+        }
+        
+        const savedTheme = localStorage.getItem('gym-planner-theme') || 'light';
+        console.log('Thème sauvegardé (initialisation HTML):', savedTheme);
+        
+        if (savedTheme === 'dark' || 
+            (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+          console.log('Mode sombre activé au chargement (HTML)');
+        } else {
+          document.documentElement.classList.remove('dark');
+          console.log('Mode clair activé au chargement (HTML)');
+        }
+        
+        // Écouter les changements de localStorage pour synchroniser entre onglets
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'gym-planner-theme') {
+            const newTheme = e.newValue || 'light';
+            console.log('Changement de thème détecté via localStorage (HTML):', newTheme);
+            if (newTheme === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
