@@ -48,7 +48,7 @@ export function ProgramForm({
   const addSection = () => {
     setFormData(prev => ({
       ...prev,
-      sections: [...(prev.sections || []), { id: `section_${Date.now()}`, title: "Nouvelle section", items: [] }]
+      sections: [...(prev.sections || []), { id: `section_${Date.now()}`, title: "", items: [] }]
     }));
   };
 
@@ -64,7 +64,7 @@ export function ProgramForm({
       ...prev,
       sections: (prev.sections || []).map(s => 
         s.id === sectionId 
-          ? { ...s, items: [...(s.items || []), { id: `item_${Date.now()}`, title: "Nouvel exercice", reps: 3, weight: 0 }] }
+          ? { ...s, items: [...(s.items || []), { id: `item_${Date.now()}`, title: "", reps: 4, weight: 10 }] }
           : s
       )
     }));
