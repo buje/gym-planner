@@ -243,8 +243,27 @@ export function Dashboard({ stats, recentWorkouts, topExercises, className = "" 
     totalExercises = 0,
     averageWeight = 0,
     streak = 0,
-    totalTime = 0
+    totalTime = 0,
+    trends = {}
   } = stats || {};
+
+  // Fonction pour formater les tendances
+  const formatTrend = (trend, type = 'percentage') => {
+    if (trend === 0) return 'Stable';
+    if (type === 'percentage') {
+      return `${trend > 0 ? '+' : ''}${trend}% ce mois`;
+    } else if (type === 'count') {
+      return `${trend > 0 ? '+' : ''}${trend} vs semaine dernière`;
+    } else {
+      return 'Stable';
+    }
+  };
+
+  const getTrendDirection = (trend) => {
+    if (trend > 0) return 'up';
+    if (trend < 0) return 'down';
+    return 'neutral';
+  };
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -255,8 +274,8 @@ export function Dashboard({ stats, recentWorkouts, topExercises, className = "" 
           value={totalWorkouts}
           subtitle="Toutes les séances"
           icon={<Calendar className="h-6 w-6" />}
-          trend="up"
-          trendValue="+12% ce mois"
+          trend={getTrendDirection(trends?.monthlyWorkouts?.trend || 0)}
+          trendValue={formatTrend(trends?.monthlyWorkouts?.trend || 0, 'percentage')}
         />
         
         <StatsCard
@@ -264,8 +283,8 @@ export function Dashboard({ stats, recentWorkouts, topExercises, className = "" 
           value={thisWeek}
           subtitle="Séances cette semaine"
           icon={<Activity className="h-6 w-6" />}
-          trend="up"
-          trendValue="+2 vs semaine dernière"
+          trend={getTrendDirection(trends?.weeklyWorkouts?.trend || 0)}
+          trendValue={formatTrend(trends?.weeklyWorkouts?.trend || 0, 'count')}
         />
         
         <StatsCard
@@ -280,8 +299,8 @@ export function Dashboard({ stats, recentWorkouts, topExercises, className = "" 
           value={`${averageWeight}kg`}
           subtitle="Poids moyen par exercice"
           icon={<Zap className="h-6 w-6" />}
-          trend="up"
-          trendValue="+5kg ce mois"
+          trend={getTrendDirection(trends?.averageWeight?.trend || 0)}
+          trendValue={trends?.averageWeight?.trend ? `${trends.averageWeight.trend > 0 ? '+' : ''}${trends.averageWeight.trend}kg récent` : 'Stable'}
         />
       </StatsGrid>
 

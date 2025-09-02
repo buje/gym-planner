@@ -196,6 +196,9 @@ function calculateStats(programs, runs) {
   const totalTime = runs
     .filter(r => r.finishedAt)
     .reduce((total, r) => total + (r.finishedAt - r.startedAt) / (1000 * 60), 0);
+
+  // Calcul des tendances
+  const trends = calculateTrends(runs);
   
   return {
     totalWorkouts,
@@ -203,8 +206,62 @@ function calculateStats(programs, runs) {
     totalExercises,
     averageWeight: Math.round(averageWeight * 10) / 10,
     streak,
-    totalTime: Math.round(totalTime)
+    totalTime: Math.round(totalTime),
+    trends
   };
+}
+
+function calculateTrends(runs) {
+  const finishedRuns = runs.filter(r => r.finishedAt).sort((a, b) => a.finishedAt - b.finishedAt);
+  
+  if (finishedRuns.length === 0) {
+    return {
+      monthlyWorkouts: { value: 0, trend: 0 },
+      weeklyWorkouts: { value: 0, trend: 0 },
+      averageWeight: { value: 0, trend: 0 }
+    };
+  }
+
+  const now = Date.now();
+  const oneMonthAgo = now - 30 * 24 * 60 * 60 * 1000;
+  const twoMonthsAgo = now - 60 * 24 * 60 * 60 * 1000;
+  const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+
+  // Tendance des séances ce mois vs mois dernier
+  const thisMonth = finishedRuns.filter(r => r.finishedAt > oneMonthAgo).length;
+  const lastMonth = finishedRuns.filter(r => r.finishedAt > twoMonthsAgo && r.finishedAt <= oneMonthAgo).length;
+  const monthlyTrend = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;
+
+  // Tendance des séances cette semaine vs semaine dernière
+  const thisWeek = finishedRuns.filter(r => r.finishedAt > oneWeekAgo).length;
+  const lastWeek = finishedRuns.filter(r => r.finishedAt > twoWeeksAgo && r.finishedAt <= oneWeekAgo).length;
+  const weeklyTrend = lastWeek > 0 ? thisWeek - lastWeek : 0;
+
+  // Tendance du poids moyen (comparaison des 10 dernières vs 10 précédentes)
+  const recentRuns = finishedRuns.slice(-10);
+  const previousRuns = finishedRuns.slice(-20, -10);
+  
+  const recentAvgWeight = calculateAverageWeight(recentRuns);
+  const previousAvgWeight = calculateAverageWeight(previousRuns);
+  const weightTrend = previousAvgWeight > 0 ? Math.round(recentAvgWeight - previousAvgWeight) : 0;
+
+  return {
+    monthlyWorkouts: { value: thisMonth, trend: monthlyTrend },
+    weeklyWorkouts: { value: thisWeek, trend: weeklyTrend },
+    averageWeight: { value: Math.round(recentAvgWeight), trend: weightTrend }
+  };
+}
+
+function calculateAverageWeight(runs) {
+  if (runs.length === 0) return 0;
+  
+  const allWeights = runs
+    .flatMap(r => r.sections.flatMap(s => s.items))
+    .filter(i => i.weights && i.weights.length > 0)
+    .flatMap(i => i.weights);
+  
+  return allWeights.length > 0 ? allWeights.reduce((sum, w) => sum + w, 0) / allWeights.length : 0;
 }
 
 function calculateStreak(runs) {
@@ -594,9 +651,64 @@ export default function ModernGymPlanner() {
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                         Aucun historique
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-300">
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">
                         Terminez au moins une séance pour voir votre historique
                       </p>
+                      <button 
+                        onClick={() => {
+                          // Créer des séances de test avec des dates différentes pour tester les tendances
+                          const now = Date.now();
+                          const testRuns = [
+                            {
+                              id: uid(),
+                              programId: 'test',
+                              startedAt: now - 2 * 24 * 60 * 60 * 1000, // Il y a 2 jours
+                              finishedAt: now - 2 * 24 * 60 * 60 * 1000 + 3600000, // Terminée il y a 2 jours
+                              title: 'Séance récente',
+                              sections: [{
+                                id: 'test-section-1',
+                                title: 'Test Section',
+                                items: [{
+                                  id: 'test-item-1',
+                                  title: 'Développé couché',
+                                  reps: 3,
+                                  weights: [60, 65, 70],
+                                  done: [true, true, true],
+                                  notes: '',
+                                  currentWeight: 70
+                                }]
+                              }]
+                            },
+                            {
+                              id: uid(),
+                              programId: 'test',
+                              startedAt: now - 35 * 24 * 60 * 60 * 1000, // Il y a 35 jours
+                              finishedAt: now - 35 * 24 * 60 * 60 * 1000 + 3600000, // Terminée il y a 35 jours
+                              title: 'Séance ancienne',
+                              sections: [{
+                                id: 'test-section-2',
+                                title: 'Test Section',
+                                items: [{
+                                  id: 'test-item-2',
+                                  title: 'Développé couché',
+                                  reps: 3,
+                                  weights: [50, 55, 60],
+                                  done: [true, true, true],
+                                  notes: '',
+                                  currentWeight: 60
+                                }]
+                              }]
+                            }
+                          ];
+                          const updatedRuns = [...runs, ...testRuns];
+                          setRuns(updatedRuns);
+                          saveRuns(updatedRuns);
+                          console.log("Séances de test créées pour tester les tendances:", testRuns);
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
+                        Créer données de test pour tendances
+                      </button>
                     </Card>
                   ) : (
                     <div className="space-y-4">

@@ -45,14 +45,23 @@ export function Navigation({
         
         {showStats && (
           <div className="flex space-x-4">
-            {Object.entries(stats).map(([key, value]) => (
-              <div key={key} className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-300">
-                  {translateStatKey(key)}
+            {Object.entries(stats)
+              .filter(([key, value]) => 
+                key !== 'trends' && 
+                (typeof value === 'number' || typeof value === 'string') && 
+                value !== null && 
+                value !== undefined
+              )
+              .map(([key, value]) => (
+                <div key={key} className="text-center">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {typeof value === 'number' && key === 'averageWeight' ? `${value}kg` : value}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
+                    {translateStatKey(key)}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>
